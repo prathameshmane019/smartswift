@@ -1,4 +1,3 @@
-// File: src/components/NFCTag.jsx
 import React, { useState } from 'react';
 
 const NFCTag = () => {
@@ -11,19 +10,35 @@ const NFCTag = () => {
       setStatus('NFC not supported on this device');
       return;
     }
-
-    try {
-      const ndef = new NDEFWriter();
-      await ndef.write({
-        records: [
-          { recordType: "url", data: `${apiUrl}?studentId=${studentId}` }
-        ]
+    const ndef = new NDEFReader();
+    ndef.onreading = (event) => console.log("We read a tag!");
+    
+    function write(data, { timeout } = {}) {
+      return new Promise((resolve, reject) => {
+        const ctlr = new AbortController();
+        ctlr.signal.onabort = () => reject("Time is up, bailing out!");
+        setTimeout(() => ctlr.abort(), timeout);
+    
+        ndef.addEventListener(
+          "reading",
+          (event) => {
+            ndef.write(data, { signal: ctlr.signal }).then(resolve, reject);
+          },
+          { once: true },
+        );
       });
-      setStatus('NFC Tag activated. Ready to be scanned.');
-    } catch (error) {
-      console.error('Error activating NFC:', error);
-      setStatus('Error activating NFC tag');
     }
+    
+    await ndef.scan();
+    try {
+      // Let's wait for 5 seconds only.
+      await write("Hello World", { timeout: 5_000 });
+    } catch (err) {
+      console.error("Something went wrong", err);
+    } finally {
+      console.log("We wrote to a tag!");
+    }
+    
   };
 
   return (

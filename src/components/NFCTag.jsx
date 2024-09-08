@@ -30,9 +30,8 @@ const NFCWriter = () => {
       const ndef = new NDEFReader();
       await ndef.write({
         records: [{
-          recordType: "url",
-          data: url,
-          mediaType: "text/plain",
+          recordType: "absolute-url",
+          data: url
         }]
       });
       alert(url)

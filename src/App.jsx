@@ -14,14 +14,14 @@ function App() {
   }, []);
 
   return (
-    <div className="App">
+    <div className="App mx-10">
       <h1>NFC Attendance System</h1>
       {!nfcSupported && <p className="warning">NFC is not supported on this device.</p>}
       <div className="mode-switch">
-        <button onClick={() => setMode('tag')} className={mode === 'tag' ? 'active' : ''}>
+        <button  onClick={() => setMode('tag')} className={`w-1/2 px-2 py-1 border-2   font-semibold rounded-xl ${mode === 'tag' ? 'active' : ''}`}>
           NFC Tag Mode
         </button>
-        <button onClick={() => setMode('reader')} className={mode === 'reader' ? 'active' : ''}>
+        <button onClick={() => setMode('reader')}  className={`w-1/2 px-2 py-1 border-2  font-semibold rounded-xl ${mode === 'reader' ? 'active' : ''}`}>
           NFC Reader Mode
         </button>
       </div>

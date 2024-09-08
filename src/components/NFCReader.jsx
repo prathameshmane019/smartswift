@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 
 const NFCReader = () => {
   const [status, setStatus] = useState('');
@@ -6,16 +6,31 @@ const NFCReader = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [alertInfo, setAlertInfo] = useState(null);
 
-  useEffect(() => {
-    if (alertInfo) {
-      const timer = setTimeout(() => setAlertInfo(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [alertInfo]);
-
   const showAlert = (type, title, description) => {
     setAlertInfo({ type, title, description });
+    setTimeout(() => setAlertInfo(null), 5000);
   };
+
+  const handleReading = useCallback(({ message, serialNumber }) => {
+    for (const record of message.records) {
+      switch (record.recordType) {
+        case "url":
+          const decoder = new TextDecoder();
+          const url = decoder.decode(record.data);
+          setLastScanned({ type: 'URL', data: url, serialNumber });
+          showAlert('success', 'URL Scanned', `Scanned URL: ${url}`);
+          break;
+        case "text":
+          const textDecoder = new TextDecoder(record.encoding);
+          const text = textDecoder.decode(record.data);
+          setLastScanned({ type: 'Text', data: text, serialNumber });
+          showAlert('success', 'Text Scanned', `Scanned Text: ${text}`);
+          break;
+        default:
+          showAlert('info', 'Unknown Record Type', `Scanned record of type: ${record.recordType}`);
+      }
+    }
+  }, []);
 
   const handleScan = async () => {
     if (!('NDEFReader' in window)) {
@@ -28,61 +43,25 @@ const NFCReader = () => {
       const ndef = new NDEFReader();
       await ndef.scan();
       setIsScanning(true);
-      setStatus('Ready to scan. Please tap the NFC tag.');
+      setStatus('Scan started. Please tap an NFC tag.');
       showAlert('info', 'Scanning Started', 'NFC scan initiated. Please tap an NFC tag.');
       
-      ndef.addEventListener("reading", ({ message, serialNumber }) => {
-        if (message.records && message.records.length > 0) {
-          const record = message.records[0];
-          alert(record)
-          if (record.recordType === "url") {
-            const url = new TextDecoder().decode(record.data);
-            handleAttendanceRequest(url, serialNumber);
-          } else {
-            showAlert('warning', 'Invalid Tag', 'The scanned tag does not contain a valid URL.');
-          }
-        }
-      });
+      ndef.addEventListener("reading", handleReading);
 
     } catch (error) {
       console.error('Error scanning NFC:', error);
-      setStatus('Error initiating NFC scan');
+      setStatus(`Error initiating NFC scan: ${error.message}`);
       showAlert('error', 'Scan Error', 'Failed to initiate NFC scan. Please try again.');
-    }
-  };
-
-  const handleAttendanceRequest = async (url, serialNumber) => {
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ serialNumber })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setStatus('Attendance recorded successfully');
-        setLastScanned(data);
-        showAlert('success', 'Attendance Recorded', `Attendance for ${data.name} has been successfully recorded.`);
-      } else {
-        const errorData = await response.json();
-        setStatus(`Error: ${errorData.message}`);
-        showAlert('error', 'Attendance Error', `Failed to record attendance: ${errorData.message}`);
-      }
-    } catch (error) {
-      console.error('Error recording attendance:', error);
-      setStatus('Error: Unable to record attendance');
-      showAlert('error', 'Network Error', 'Unable to connect to the server. Please check your internet connection.');
     }
   };
 
   return (
     <div className="p-4 max-w-md mx-auto">
-      <h2 className="text-2xl font-bold mb-4">NFC Attendance Reader</h2>
+      <h2 className="text-2xl font-bold mb-4">NFC Reader</h2>
       <button 
         onClick={handleScan}
         disabled={isScanning}
-        className={`px-4 py-2 rounded text-white ${
+        className={`w-full px-4 py-2 rounded text-white font-semibold ${
           isScanning 
             ? 'bg-gray-400 cursor-not-allowed' 
             : 'bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'

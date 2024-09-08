@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 
 const NFCWriter = () => {
-  const [url, setUrl] = useState('');
+  const [message, setMessage] = useState('');
+  const [isUrl, setIsUrl] = useState(false);
   const [status, setStatus] = useState('');
   const [isWriting, setIsWriting] = useState(false);
   const [alertInfo, setAlertInfo] = useState(null);
@@ -18,8 +19,8 @@ const NFCWriter = () => {
       return;
     }
 
-    if (!url) {
-      showAlert('error', 'Invalid Input', 'Please enter a valid URL to write to the NFC tag.');
+    if (!message) {
+      showAlert('error', 'Invalid Input', 'Please enter a message to write to the NFC tag.');
       return;
     }
 
@@ -29,16 +30,15 @@ const NFCWriter = () => {
     try {
       const ndef = new NDEFReader();
       await ndef.write({
-        records: [{
-          recordType: "absolute-url",
-          data: url
-        }]
+        records: [
+          isUrl
+            ? { recordType: "url", data: message }
+            : { recordType: "text", data: message }
+        ]
       });
-      alert(url)
-      setStatus('URL written successfully to NFC tag.');
-      showAlert('success', 'Write Successful', 'The URL has been successfully written to the NFC tag.');
+      setStatus('Message written successfully to NFC tag.');
+      showAlert('success', 'Write Successful', 'The message has been successfully written to the NFC tag.');
     } catch (error) {
-      alert(error);
       console.error('Error writing to NFC tag:', error);
       setStatus('Error writing to NFC tag: ' + error.message);
       showAlert('error', 'Write Error', 'Failed to write to the NFC tag. Please try again.');
@@ -46,17 +46,28 @@ const NFCWriter = () => {
       setIsWriting(false);
     }
   };
+
   return (
     <div className="p-4 max-w-md mx-auto">
-      <h2 className="text-2xl font-bold mb-4">NFC URL Writer</h2>
+      <h2 className="text-2xl font-bold mb-4">NFC Writer</h2>
       <div className="space-y-4">
         <input
-          type="url"
-          placeholder="Enter URL to write"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
+          type="text"
+          placeholder="Enter message to write"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="isUrl"
+            checked={isUrl}
+            onChange={(e) => setIsUrl(e.target.checked)}
+            className="mr-2"
+          />
+          <label htmlFor="isUrl">Write as URL</label>
+        </div>
         <button 
           onClick={handleWrite}
           disabled={isWriting}

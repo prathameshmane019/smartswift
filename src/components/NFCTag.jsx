@@ -30,9 +30,11 @@ const NFCWriter = () => {
       const ndef = new NDEFReader();
       await ndef.write({ records: [{ recordType: "url", data: url }] });
       setStatus('URL written successfully to NFC tag.');
+      alert(url);
       showAlert('success', 'Write Successful', 'The URL has been successfully written to the NFC tag.');
     } catch (error) {
       console.error('Error writing to NFC tag:', error);
+      alert(error);
       setStatus('Error writing to NFC tag');
       showAlert('error', 'Write Error', 'Failed to write to the NFC tag. Please try again.');
     } finally {

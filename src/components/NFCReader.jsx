@@ -34,6 +34,7 @@ const NFCReader = () => {
       ndef.addEventListener("reading", ({ message, serialNumber }) => {
         if (message.records && message.records.length > 0) {
           const record = message.records[0];
+          alert(record)
           if (record.recordType === "url") {
             const url = new TextDecoder().decode(record.data);
             handleAttendanceRequest(url, serialNumber);

@@ -38,6 +38,7 @@ const NFCReader = () => {
       if (response.ok) {
         const data = await response.json();
         setStatus('Attendance recorded successfully');
+        alert(status)
         setLastScanned(data);
       } else {
         const errorData = await response.json();
